@@ -123,19 +123,19 @@ class	Packet():
 		"""
 
 		# Initialize all the fields to None
-		self.PSN = None
-		self.PSE = None
-		self.CAT = None
-		self.PCF_Integrity = None
-		self.PCF_Value = None
-		self.PCF_Len = None
-		self.L = None
-		self.R = None
-		self.S = None
-		self.X = None
-		self.Payload = None
+		self.psn = None
+		self.pse = None
+		self.cat = None
+		self.pcf_integrity = None
+		self.pcf_value = None
+		self.pcf_len = None
+		self.l = None
+		self.r = None
+		self.s = None
+		self.x = None
+		self.payload = None
 
-		self.Magic = _default_magic
+		self.magic = _default_magic
 
 
 	def from_bytes(self, bytes):
@@ -151,22 +151,22 @@ class	Packet():
 
 		magic = magicAndFlags >> _magic_shift
 
-		if magic != self.Magic:
+		if magic != self.magic:
 			raise ValueError("Invalid Magic value.")
 
 		flags = magicAndFlags & _flags_mask
 
-		self.L = bool(flags & _l_mask)
-		self.R = bool(flags & _r_mask)
-		self.S = bool(flags & _s_mask)
-		self.X = bool(flags & _x_mask)
+		self.l = bool(flags & _l_mask)
+		self.r = bool(flags & _r_mask)
+		self.s = bool(flags & _s_mask)
+		self.x = bool(flags & _x_mask)
 
-		self.CAT = _get_u64(bytes[_cat_pos[0] : _cat_pos[1]])
-		self.PSN = _get_u32(bytes[_psn_pos[0] : _psn_pos[1]])
-		self.PSE = _get_u32(bytes[_pse_pos[0] : _pse_pos[1]])
+		self.cat = _get_u64(bytes[_cat_pos[0] : _cat_pos[1]])
+		self.psn = _get_u32(bytes[_psn_pos[0] : _psn_pos[1]])
+		self.pse = _get_u32(bytes[_pse_pos[0] : _pse_pos[1]])
 
-		if not self.X:
-			self.Payload = bytes[_min_packet_len:]
+		if not self.x:
+			self.payload = bytes[_min_packet_len:]
 		else:
 			raise ValueError("Extended packets not implemented yet.")
 
