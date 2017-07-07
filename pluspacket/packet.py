@@ -1,5 +1,6 @@
 import struct
 
+
 _fmt_u64 = ">Q"
 _fmt_u32 = ">L"
 _magic_shift = 4
@@ -14,6 +15,7 @@ _cat_pos = (4, 12)
 _psn_pos = (12, 16)
 _pse_pos = (16, 20)
 _magic_pos = (0, 4)
+
 
 def _get_u32(s):
 	"""
@@ -115,6 +117,14 @@ def is_extended_packet(buf):
 	return get_x(buf)
 
 
+def parse_packet(buf):
+	"""
+	Parses a packet completely.
+	"""
+
+	return Packet().from_bytes(buf)
+
+
 class	Packet():
 
 	def __init__(self):
@@ -140,7 +150,7 @@ class	Packet():
 
 	def from_bytes(self, bytes):
 		"""
-		Parses a packet from bytes
+		Parses a packet from bytes.
 		"""
 
 		if len(bytes) < _min_packet_len:
@@ -170,10 +180,12 @@ class	Packet():
 		else:
 			raise ValueError("Extended packets not implemented yet.")
 
+		return self
+
 		
 	def to_bytes(self):
 		"""
-		Converts the packet to bytes.
+		Unparses the packet to bytes.
 		"""
 
 		pass
