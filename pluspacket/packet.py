@@ -141,7 +141,8 @@ def is_extended_packet(buf):
 
 def parse_packet(buf):
 	"""
-	Parses a packet completely.
+	Parses a packet completely. This is a wrapper for the from_bytes method
+	of the Packet class.
 	"""
 
 	return Packet().from_bytes(buf)
@@ -316,7 +317,9 @@ class	Packet():
 
 	def from_bytes(self, bytes):
 		"""
-		Parses a packet from bytes.
+		Parses a packet from bytes. This function does not set PCF Integrity to zero
+		if PCF Len is zero. If you want that behaviour as mentioned in the PLUS spec
+		you must do this yourself. 
 		"""
 
 		if len(bytes) < _min_packet_len:
