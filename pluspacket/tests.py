@@ -268,7 +268,71 @@ class TestSerialize(unittest.TestCase):
 		plus_packet = packet.new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_value, payload)
 
 		self.assertEqual(plus_packet.to_bytes(), buf)
-		
+
+import random
+
+class TestFuzzy(unittest.TestCase):
+
+	def _m(self):
+		"""
+		Randomly alter a valid buffer (== can be parsed) and returns it.
+		"""
+
+		buf = ([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0x01, 0x1B, # PCF Type := 0x01,
+			# PCF Len 6, PCF I = 11b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 6 bytes PCF value
+			0x99, 0x98, 0x97, 0x96])
+
+		n = random.randint(1, 10)
+
+		i = 0
+		while i < n:
+			j = random.randint(0, len(buf)-1)
+			k = random.randint(0, 255)
+
+			buf[j] = k
+
+			i += 1
+
+		return bytes(buf)
+
+
+	def test_fuzzy(self):
+		"""
+		Fuzzy testing.
+
+		Basically, if parsing of a packet is successful, then unparsing must be
+		successful as well and the buffers must match.
+		"""
+
+		i = 0
+
+		while i < 1024*100:
+			buf = self._m()
+
+			plus_packet = None
+
+			try:
+				plus_packet = packet.parse_packet(buf)
+			except:
+				plus_packet = None
+
+			if plus_packet != None:
+				try:
+					self.assertEqual(plus_packet.to_bytes(), buf)
+				except:
+					print(plus_packet.to_dict())
+					raise ValueError("Buffer mismatch?")
+
+			i += 1
+
 
 if __name__ == "__main__":
 	unittest.main()

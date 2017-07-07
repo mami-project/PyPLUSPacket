@@ -248,6 +248,23 @@ class	Packet():
 		self.magic = _default_magic
 
 
+	def to_dict(self):
+		return {
+			"psn" : self.psn,
+			"pse" : self.pse,
+			"cat" : self.cat,
+			"pcf_integrity" : self.pcf_integrity,
+			"pcf_value" : self.pcf_value,
+			"pcf_type" : self.pcf_type,
+			"l" : self.l,
+			"r" : self.r,
+			"s" : self.s,
+			"x" : self.x,
+			"magic" : self.magic,
+			"payload" : self.payload
+		}
+
+
 	def is_valid(self):
 		"""
 		Returns true if the packet's attributes/fields are in a valid state.
@@ -275,6 +292,8 @@ class	Packet():
 							self.pcf_value != None]):
 			
 				return False
+
+			return True
 
 		if _any ([	self.pcf_integrity == None,
 						self.pcf_len == None,
@@ -379,6 +398,7 @@ class	Packet():
 			self.pcf_integrity = pcf_integrity
 			self.pcf_value = pcf_value
 			self.payload = payload
+			self.pcf_type = pcf_type
 
 		
 	def to_bytes(self):
