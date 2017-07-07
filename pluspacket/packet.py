@@ -66,7 +66,7 @@ def get_magic(buf):
 	to make sure that buffer is large enough. 
 	"""
 
-	return _get_u64(bytes[_magic_pos[0] : _magic_pos[1]]) >> _magic_shift
+	return _get_u32(buf[_magic_pos[0] : _magic_pos[1]]) >> _magic_shift
 
 
 def get_flags(buf):
@@ -74,7 +74,7 @@ def get_flags(buf):
 	Returns the flags as ORed bits.
 	"""
 
-	return _get_u64(bytes[_magic_pos[0] : _magic_pos[1]]) & _flags_mask
+	return _get_u32(buf[_magic_pos[0] : _magic_pos[1]]) & _flags_mask
 
 
 def get_l(buf):
