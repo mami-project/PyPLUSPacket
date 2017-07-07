@@ -273,7 +273,7 @@ import random
 
 class TestFuzzy(unittest.TestCase):
 
-	def _m(self):
+	def _random_buf(self):
 		"""
 		Randomly alter a valid buffer (== can be parsed) and returns it.
 		"""
@@ -308,14 +308,14 @@ class TestFuzzy(unittest.TestCase):
 		"""
 		Fuzzy testing.
 
-		Basically, if parsing of a packet is successful, then unparsing must be
+		If parsing of a packet is successful, then unparsing must be
 		successful as well and the buffers must match.
 		"""
 
 		i = 0
 
 		while i < 1024*100:
-			buf = self._m()
+			buf = self._random_buf()
 
 			plus_packet = None
 
