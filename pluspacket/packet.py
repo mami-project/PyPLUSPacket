@@ -22,7 +22,7 @@ def _get_u32(s):
 	Returns s -> u32
 	"""
 
-	return struct.unpack(_fmt_u32, s)
+	return struct.unpack(_fmt_u32, s)[0]
 
 
 def _get_u64(s):
@@ -30,7 +30,7 @@ def _get_u64(s):
 	Returns s -> u64
 	"""
 
-	return struct.unpack(_fmt_u64, s)
+	return struct.unpack(_fmt_u64, s)[0]
 
 
 def get_psn(buf):
