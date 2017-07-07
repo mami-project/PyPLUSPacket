@@ -33,5 +33,81 @@ class TestPacket(unittest.TestCase):
 		self.assertEqual(packet.get_cat(buf), expected)
 
 
+	def test_get_magic(self):
+		"""
+		Tests if the Magic is read correctly.
+		"""
+
+		buf = bytes([	0x12, 0x23, 0x34, 0x81])
+
+		expected = 0x1223348
+
+		self.assertEqual(packet.get_magic(buf), expected)
+
+
+	def test_get_flags(self):
+		"""
+		Tests if the Flags are read correctly.
+		"""
+
+		buf = bytes([	0x12, 0x23, 0x34, 0x8B])
+
+		expected = 0xB
+
+		self.assertEqual(packet.get_flags(buf), expected)
+
+
+	def test_get_psn(self):
+		"""
+		Tests if the PSN is read correctly.
+		"""
+
+		buf = bytes([	0x00, 0x00, 0x00, 0x00,
+							0x00, 0x00, 0x00, 0x00,
+							0x00, 0x00, 0x00, 0x00,
+							0x12, 0x34, 0x56, 0x78])
+
+		expected = 0x12345678
+
+		self.assertEqual(packet.get_psn(buf), expected)
+
+
+	def test_get_pse(self):
+		"""
+		Tests if the PSE is read correctly.
+		"""
+
+		buf = bytes([	0x00, 0x00, 0x00, 0x00,
+							0x00, 0x00, 0x00, 0x00,
+							0x00, 0x00, 0x00, 0x00,
+							0x00, 0x00, 0x00, 0x00,
+							0x12, 0x34, 0x56, 0x78])
+
+		expected = 0x12345678
+
+		self.assertEqual(packet.get_pse(buf), expected)
+
+
+	def test_get_lrsx(self):
+		"""
+		Tests if get_l/r/s/x work correctly.
+		"""
+
+		buf = bytes([	0x00, 0x00, 0x00, 0xB])
+		
+		self.assertEqual(packet.get_l(buf), True)
+		self.assertEqual(packet.get_r(buf), False)
+		self.assertEqual(packet.get_s(buf), True)
+		self.assertEqual(packet.get_x(buf), True)
+
+		buf = bytes([	0x00, 0x00, 0x00, 0x04])
+
+		self.assertEqual(packet.get_l(buf), not True)
+		self.assertEqual(packet.get_r(buf), not False)
+		self.assertEqual(packet.get_s(buf), not True)
+		self.assertEqual(packet.get_x(buf), not True)
+
+
+
 if __name__ == "__main__":
 	unittest.main()
