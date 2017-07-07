@@ -15,6 +15,7 @@ _cat_pos = (4, 12)
 _psn_pos = (12, 16)
 _pse_pos = (16, 20)
 _magic_pos = (0, 4)
+_udp_header_len = 8
 
 
 def _get_u32(s):
@@ -123,6 +124,35 @@ def parse_packet(buf):
 	"""
 
 	return Packet().from_bytes(buf)
+
+
+def detect_plus_in_udp(buf):
+	"""
+	Tries to detect the presence of a PLUS header in UDP (incl. header)
+	"""
+
+	if len(buf) < _udp_header_len:
+		raise ValueError("Buffer too small. UDP header is at least 8 bytes long.")
+
+	udp_payload = buf[_udp_header_len:]
+
+	return detect_plus(udp_payload)
+
+
+def detect_plus(buf):
+	"""
+	Tries to detect the presence of a PLUS header in payload (excl. UDP header)
+	"""
+	
+	if len(buf) < _min_packet_len:
+		# Technically the magic value could be present here but if the packet
+		# is this small then there can't be a complete basic header present and 
+		# this is best counted as 'not plus'.
+		return False
+
+	magic = get_magic(buf)
+
+	return magic == _default_magic
 
 
 class	Packet():
