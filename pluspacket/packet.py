@@ -183,7 +183,11 @@ def _any(xs):
 
 	return False
 
+
 def new_basic_packet(l, r, s, cat, psn, pse, payload):
+	"""
+	Creates a new packet with a basic header.
+	"""
 	p = Packet()
 
 	p.l = l
@@ -194,6 +198,28 @@ def new_basic_packet(l, r, s, cat, psn, pse, payload):
 	p.pse = pse
 	p.payload = payload
 	p.x = False
+
+	if not p.is_valid():
+		return ValueError("Illegal combination of arguments!")
+
+	return p
+
+
+def new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_value, payload):
+	"""
+	Creates a new packet with an extended header.
+	"""
+
+	p = new_basic_packet(l, r, s, cat, psn, pse, payload)
+	p.x = True
+
+	p.pcf_len = len(pcf_value)
+	p.pcf_type = pcf_type
+	p.pcf_integrity = pcf_integrity
+	p.pcf_value = pcf_value
+
+	if not p.is_valid():
+		return ValueError("Illegal combination of arguments!")
 
 	return p
 
@@ -238,6 +264,9 @@ class	Packet():
 			return True
 
 		if self.pcf_type == None:
+			return False
+
+		if self.pcf_type == 0x00:
 			return False
 
 		if self.pcf_type == 0xFF:
@@ -387,8 +416,10 @@ class	Packet():
 			pcf_type = self.pcf_type >> 8
 			buf.append(0x00)
 			buf.append(pcf_type)
+		else:
+			buf.append(self.pcf_type)
 
-		buf.append(self.pcf_len << 6 | self.pcf_integrity)
+		buf.append(self.pcf_len << 2 | self.pcf_integrity)
 		buf += self.pcf_value
 		buf += self.payload
 
