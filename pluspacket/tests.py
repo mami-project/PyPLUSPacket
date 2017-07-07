@@ -7,7 +7,7 @@ class TestDummy(unittest.TestCase):
 		self.assertEqual(True, True)
 
 
-class TestPacket(unittest.TestCase):
+class TestBasicPacket(unittest.TestCase):
 
 	def test_too_small_packet(self):
 		"""
@@ -166,6 +166,40 @@ class TestPacket(unittest.TestCase):
 
 		with self.assertRaises(ValueError):
 			self.assertEqual(packet.detect_plus_in_udp(buf), False)
+
+
+class TestExtendedPacket(unittest.TestCase):
+	pass
+
+class TestSerialize(unittest.TestCase):
+
+	def test_serialize_1(self):
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFA, #magic + flags
+			0x12, 0x34, 0x56, 0x78, #cat
+			0x21, 0x43, 0x65, 0x87,
+			0x87, 0x65, 0x43, 0x21, #psn
+			0x11, 0x22, 0x33, 0x44, #pse
+			0x01, 0x02, 0x03, 0x04, #payload
+			0x10, 0x20, 0x30, 0x40, #payload
+			0x99, 0x90, 0x99, 0x90])
+
+		l = True
+		r = False
+		s = True
+
+		cat = 0x1234567821436587
+		psn = 0x87654321
+		pse = 0x11223344
+
+		payload = bytes([
+			0x01, 0x02, 0x03, 0x04,
+			0x10, 0x20, 0x30, 0x40,
+			0x99, 0x90, 0x99, 0x90])
+
+		plus_packet = packet.new_basic_packet(l, r, s, cat, psn, pse, payload)
+
+		self.assertEqual(plus_packet.to_bytes(), buf)
 		
 
 if __name__ == "__main__":

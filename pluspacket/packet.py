@@ -17,6 +17,11 @@ _pse_pos = (16, 20)
 _magic_pos = (0, 4)
 _udp_header_len = 8
 
+PCF_INTEGRITY_FULL = 0x03
+PCF_INTEGRITY_HALF = 0x02
+PCF_INTEGRITY_QUARTER = 0x01
+PCF_INTEGRITY_ZERO = 0x00
+
 
 def _get_u32(s):
 	"""
@@ -32,6 +37,22 @@ def _get_u64(s):
 	"""
 
 	return struct.unpack(_fmt_u64, s)[0]
+
+
+def _put_u64(i, buf):
+	"""
+	Writes an u64
+	"""
+
+	buf += struct.pack(_fmt_u64, i)
+
+
+def _put_u32(i, buf):
+	"""
+	Writes an u32
+	"""
+
+	buf += struct.pack(_fmt_u32, i)
 
 
 def get_psn(buf):
@@ -155,6 +176,28 @@ def detect_plus(buf):
 	return magic == _default_magic
 
 
+def _any(xs):
+	for x in xs:
+		if x:
+			return True
+
+	return False
+
+def new_basic_packet(l, r, s, cat, psn, pse, payload):
+	p = Packet()
+
+	p.l = l
+	p.r = r
+	p.s = s
+	p.cat = cat
+	p.psn = psn
+	p.pse = pse
+	p.payload = payload
+	p.x = False
+
+	return p
+
+
 class	Packet():
 
 	def __init__(self):
@@ -169,6 +212,7 @@ class	Packet():
 		self.pcf_integrity = None
 		self.pcf_value = None
 		self.pcf_len = None
+		self.pcf_type = None
 		self.l = None
 		self.r = None
 		self.s = None
@@ -176,6 +220,50 @@ class	Packet():
 		self.payload = None
 
 		self.magic = _default_magic
+
+
+	def is_valid(self):
+		"""
+		Returns true if the packet's attributes/fields are in a valid state.
+		"""
+
+		if _any		([	self.psn == None, self.pse == None,
+							self.cat == None, self.magic == None,
+							self.l == None, self.r == None,
+							self.s == None, self.x == None]):
+
+			return False
+
+		if not self.x:
+			return True
+
+		if self.pcf_type == None:
+			return False
+
+		if self.pcf_type == 0xFF:
+			if _any ([	self.pcf_integrity != None,
+							self.pcf_len != None,
+							self.pcf_value != None]):
+			
+				return False
+
+		if _any ([	self.pcf_integrity == None,
+						self.pcf_len == None,
+						self.pcf_value == None]):
+
+			return False
+
+
+		if self.pcf_len != len(self.pcf_value):
+			return False
+
+		if self.pcf_len > 63:
+			return False
+
+		if self.pcf_integrity < 0 or self.pcf_integrity > 3:
+			return False
+
+		return True
 
 
 	def from_bytes(self, bytes):
@@ -191,8 +279,10 @@ class	Packet():
 
 		magic = magicAndFlags >> _magic_shift
 
-		if magic != self.magic:
+		if magic != _default_magic:
 			raise ValueError("Invalid Magic value.")
+
+		self.magic = magic
 
 		flags = magicAndFlags & _flags_mask
 
@@ -208,9 +298,58 @@ class	Packet():
 		if not self.x:
 			self.payload = bytes[_min_packet_len:]
 		else:
-			raise ValueError("Extended packets not implemented yet.")
+			self._extended(bytes[_min_packet_len:])
 
 		return self
+
+
+	def _extended(self, buf):
+		"""
+		Internal. Continues parsing extended headers.
+		"""
+
+		if len(buf) < 1:
+			raise ValueError("Extended header must have PCF_TYPE")
+
+		pcf_type = buf[0]
+
+		if pcf_type == 0xFF:
+			# This means no pcf_integry, pcf_len, pcf_value is present.
+			self.payload = buf[1:]
+			self.pcf_type = pcf_type
+		else:
+			if pcf_type == 0x00:
+				# One additional pcf_type byte
+				buf = buf[1:]
+
+				if len(buf) == 0:
+					raise ValueError("Missing additional PCF_TYPE byte")
+
+				pcf_type = buf[0] << 8
+			
+			buf = buf[1:]
+
+			if len(buf) == 0:
+				raise ValueError("Missing PCF_LEN and PCF_INTEGRITY")
+
+			pcf_leni = buf[0]
+
+			pcf_len = pcf_leni >> 2
+			pcf_integrity = pcf_leni & 0x03
+
+			buf = buf[1:]
+
+			if len(buf) < pcf_len:
+				raise ValueError("Incomplete PCF_VALUE")
+
+			pcf_value = buf[:pcf_len]
+
+			payload = buf[pcf_len:]
+
+			self.pcf_len = pcf_len
+			self.pcf_integrity = pcf_integrity
+			self.pcf_value = pcf_value
+			self.payload = payload
 
 		
 	def to_bytes(self):
@@ -218,4 +357,39 @@ class	Packet():
 		Unparses the packet to bytes.
 		"""
 
-		pass
+		if not self.is_valid():
+			raise ValueError("Internal state is not valid!")
+
+		buf = bytearray()
+
+		magicAndFlags = self.magic << 4
+
+		if self.l: magicAndFlags |= _l_mask
+		if self.r: magicAndFlags |= _r_mask
+		if self.s: magicAndFlags |= _s_mask
+		if self.x: magicAndFlags |= _x_mask
+
+		_put_u32(magicAndFlags, buf)
+		_put_u64(self.cat, buf)
+		_put_u32(self.psn, buf)
+		_put_u32(self.pse, buf)
+
+		if not self.x:
+			buf += self.payload
+			return buf
+
+		if self.pcf_type == 0xFF:
+			buf.append(0xFF)
+			buf += self.payload
+			return buf
+
+		if self.pcf_type & 0x00FF == 0:
+			pcf_type = self.pcf_type >> 8
+			buf.append(0x00)
+			buf.append(pcf_type)
+
+		buf.append(self.pcf_len << 6 | self.pcf_integrity)
+		buf += self.pcf_value
+		buf += self.payload
+
+		return buf
