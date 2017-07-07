@@ -275,7 +275,7 @@ class	Packet():
 			raise ValueError("Minimum length of a PLUS packet is 20 bytes.")
 
 
-		magicAndFlags = _get_u64(bytes[_magic_pos[0] : _magic_pos[1]])
+		magicAndFlags = _get_u32(bytes[_magic_pos[0] : _magic_pos[1]])
 
 		magic = magicAndFlags >> _magic_shift
 
