@@ -171,6 +171,25 @@ class TestBasicPacket(unittest.TestCase):
 			self.assertEqual(packet.detect_plus_in_udp(buf), False)
 
 
+	def test_invalid_magic(self):
+		"""
+		Tests parsing when magic is invalid.
+		"""
+
+		buf = bytes([
+			0x18, 0x00, 0x7F, 0xFA, #magic + flags
+			0x12, 0x34, 0x56, 0x78, #cat
+			0x21, 0x43, 0x65, 0x87,
+			0x87, 0x65, 0x43, 0x21, #psn
+			0x11, 0x22, 0x33, 0x44, #pse
+			0x01, 0x02, 0x03, 0x04, #payload
+			0x10, 0x20, 0x30, 0x40, #payload
+			0x99, 0x90, 0x99, 0x90])	
+
+		with self.assertRaises(ValueError):
+			plus_packet = packet.parse_packet(buf)
+
+
 	def test_parse_packet_1(self):
 		"""
 		Tests parsing a basic packet.
