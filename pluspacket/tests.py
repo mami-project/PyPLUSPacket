@@ -8,6 +8,9 @@ class TestDummy(unittest.TestCase):
 
 
 class TestBasicPacket(unittest.TestCase):
+	"""
+	Basic packet & helpers tests.
+	"""
 
 	def test_too_small_packet(self):
 		"""
@@ -169,6 +172,10 @@ class TestBasicPacket(unittest.TestCase):
 
 
 	def test_parse_packet_1(self):
+		"""
+		Tests parsing a basic packet.
+		"""
+
 		buf = bytes([
 			0xD8, 0x00, 0x7F, 0xFA, #magic + flags
 			0x12, 0x34, 0x56, 0x78, #cat
@@ -206,12 +213,155 @@ class TestBasicPacket(unittest.TestCase):
 
 
 class TestExtendedPacket(unittest.TestCase):
-	pass
+	"""
+	Tests for extended packets.
+	"""
+	
+	def test_parse_packet_1(self):
+		"""
+		Tests parsing an extended packet.
+		"""
+
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0x01, 0x1B, # PCF Type := 0x01,
+			# PCF Len 6, PCF I = 11b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 6 bytes PCF value
+			0x99, 0x98, 0x97, 0x96]) # 4 bytes payload
+
+		l = True
+		r = True
+		s = True
+		cat = 0x1234567812345678
+		psn = 0x13111111
+		pse = 0x23222222
+		pcf_type = 0x01
+		pcf_len = 0x06
+		pcf_integrity = 0x03
+		pcf_value = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
+		payload = bytes([0x99, 0x98, 0x97, 0x96])
+
+		plus_packet = packet.parse_packet(buf)
+
+		self.assertEqual(plus_packet.l, l)
+		self.assertEqual(plus_packet.r, r)
+		self.assertEqual(plus_packet.s, s)
+		self.assertEqual(plus_packet.x, True)
+		self.assertEqual(plus_packet.cat, cat)
+		self.assertEqual(plus_packet.psn, psn)
+		self.assertEqual(plus_packet.pse, pse)
+		self.assertEqual(plus_packet.payload, payload)
+		self.assertEqual(plus_packet.pcf_type, pcf_type)
+		self.assertEqual(plus_packet.pcf_value, pcf_value)
+		self.assertEqual(plus_packet.pcf_integrity, pcf_integrity)
+		self.assertEqual(plus_packet.is_valid(), True)
+
+
+	def test_parse_packet_2(self):
+		"""
+		Tests parsing an extended packet.
+		"""
+
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0x00, 0x01, 0x00, # PCF Type := 0x0100,
+			# PCF Len := 0, PCF I := 00b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 
+			0x99, 0x98, 0x97, 0x96]) # 10 bytes payload
+
+		l = True
+		r = True
+		s = True
+		cat = 0x1234567812345678
+		psn = 0x13111111
+		pse = 0x23222222
+		pcf_type = 0x0100
+		pcf_len = 0x00
+		pcf_integrity = 0x00
+		pcf_value = bytes([])
+		payload = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x99, 0x98, 0x97, 0x96])
+
+		plus_packet = packet.parse_packet(buf)
+
+		self.assertEqual(plus_packet.l, l)
+		self.assertEqual(plus_packet.r, r)
+		self.assertEqual(plus_packet.s, s)
+		self.assertEqual(plus_packet.x, True)
+		self.assertEqual(plus_packet.cat, cat)
+		self.assertEqual(plus_packet.psn, psn)
+		self.assertEqual(plus_packet.pse, pse)
+		self.assertEqual(plus_packet.payload, payload)
+		self.assertEqual(plus_packet.pcf_type, pcf_type)
+		self.assertEqual(plus_packet.pcf_value, pcf_value)
+		self.assertEqual(plus_packet.pcf_integrity, pcf_integrity)
+		self.assertEqual(plus_packet.is_valid(), True)
+
+
+	def test_parse_packet_3(self):
+		"""
+		Tests parsing an extended packet.
+		"""
+
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0xFF, 0x01, 0x00, # PCF Type := 0xFF,
+			# PCF Len := 0, PCF I := 00b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 
+			0x99, 0x98, 0x97, 0x96]) # 10 bytes payload
+
+		l = True
+		r = True
+		s = True
+		cat = 0x1234567812345678
+		psn = 0x13111111
+		pse = 0x23222222
+		pcf_type = 0xFF
+		pcf_len = None
+		pcf_integrity = None
+		pcf_value = None
+		payload = bytes([0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x99, 0x98, 0x97, 0x96])
+
+		plus_packet = packet.parse_packet(buf)
+
+		self.assertEqual(plus_packet.l, l)
+		self.assertEqual(plus_packet.r, r)
+		self.assertEqual(plus_packet.s, s)
+		self.assertEqual(plus_packet.x, True)
+		self.assertEqual(plus_packet.cat, cat)
+		self.assertEqual(plus_packet.psn, psn)
+		self.assertEqual(plus_packet.pse, pse)
+		self.assertEqual(plus_packet.payload, payload)
+		self.assertEqual(plus_packet.pcf_type, pcf_type)
+		self.assertEqual(plus_packet.pcf_value, pcf_value)
+		self.assertEqual(plus_packet.pcf_integrity, pcf_integrity)
+		self.assertEqual(plus_packet.is_valid(), True)
 
 
 class TestSerialize(unittest.TestCase):
+	"""
+	Serialization tests.
+	"""
 
 	def test_serialize_1(self):
+		"""
+		Tests serialization of a packet.
+		"""
+
 		buf = bytes([
 			0xD8, 0x00, 0x7F, 0xFA, #magic + flags
 			0x12, 0x34, 0x56, 0x78, #cat
@@ -241,6 +391,10 @@ class TestSerialize(unittest.TestCase):
 
 
 	def test_serialize_2(self):
+		"""
+		Tests serialization of a packet.
+		"""
+
 		buf = bytes([
 			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
 			0x12, 0x34, 0x56, 0x78, # cat
@@ -269,9 +423,115 @@ class TestSerialize(unittest.TestCase):
 
 		self.assertEqual(plus_packet.to_bytes(), buf)
 
+	
+	def test_serialize_3(self):
+		"""
+		Tests serialization of a packet.
+		"""
+
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0x00, 0x01, 0x1B, # PCF Type := 0x0100,
+			# PCF Len 6, PCF I = 11b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 6 bytes PCF value
+			0x99, 0x98, 0x97, 0x96]) # 4 bytes payload
+
+		l = True
+		r = True
+		s = True
+		cat = 0x1234567812345678
+		psn = 0x13111111
+		pse = 0x23222222
+		pcf_type = 0x0100
+		pcf_len = 0x06
+		pcf_integrity = 0x03
+		pcf_value = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
+		payload = bytes([0x99, 0x98, 0x97, 0x96])
+
+		plus_packet = packet.new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_value, payload)
+
+		self.assertEqual(plus_packet.to_bytes(), buf)
+
+
+	def test_serialize_4(self):
+		"""
+		Tests serialization of a packet.
+		"""
+
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0x00, 0x01, 0x00, # PCF Type := 0x0100,
+			# PCF Len := 0, PCF I := 00b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 
+			0x99, 0x98, 0x97, 0x96]) # 10 bytes payload
+
+		l = True
+		r = True
+		s = True
+		cat = 0x1234567812345678
+		psn = 0x13111111
+		pse = 0x23222222
+		pcf_type = 0x0100
+		pcf_len = 0x00
+		pcf_integrity = 0x00
+		pcf_value = bytes([])
+		payload = bytes([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x99, 0x98, 0x97, 0x96])
+
+		plus_packet = packet.new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_value, payload)
+
+		self.assertEqual(plus_packet.to_bytes(), buf)
+
+
+	def test_serialize_5(self):
+		"""
+		Tests serialization of a packet.
+		"""
+
+		buf = bytes([
+			0xD8, 0x00, 0x7F, 0xFF, # magic + flags (x bit set)
+			0x12, 0x34, 0x56, 0x78, # cat
+			0x12, 0x34, 0x56, 0x78, # cat..
+			0x13, 0x11, 0x11, 0x11, # psn
+			0x23, 0x22, 0x22, 0x22, # pse
+			0xFF, 0x01, 0x00, # PCF Type := 0xFF,
+			# PCF Len := 0, PCF I := 00b,
+			0x01, 0x02, 0x03, 0x04,
+			0x05, 0x06, # 
+			0x99, 0x98, 0x97, 0x96]) # 10 bytes payload
+
+		l = True
+		r = True
+		s = True
+		cat = 0x1234567812345678
+		psn = 0x13111111
+		pse = 0x23222222
+		pcf_type = 0xFF
+		pcf_len = None
+		pcf_integrity = None
+		pcf_value = None
+		payload = bytes([0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x99, 0x98, 0x97, 0x96])
+
+		plus_packet = packet.new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_value, payload)
+
+		self.assertEqual(plus_packet.to_bytes(), buf)
+
+
 import random
 
 class TestFuzzy(unittest.TestCase):
+	"""
+	Fuzzy testing. Let's hope this detects things we didn't think of.
+	"""
 
 	def _random_buf(self):
 		"""

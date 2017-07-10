@@ -16,6 +16,7 @@ _psn_pos = (12, 16)
 _pse_pos = (16, 20)
 _magic_pos = (0, 4)
 _udp_header_len = 8
+_pcf_type_plus_payload = 0xFF
 
 PCF_INTEGRITY_FULL = 0x03
 PCF_INTEGRITY_HALF = 0x02
@@ -201,7 +202,7 @@ def new_basic_packet(l, r, s, cat, psn, pse, payload):
 	p.x = False
 
 	if not p.is_valid():
-		return ValueError("Illegal combination of arguments!")
+		raise ValueError("Illegal combination of arguments!")
 
 	return p
 
@@ -214,13 +215,19 @@ def new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_val
 	p = new_basic_packet(l, r, s, cat, psn, pse, payload)
 	p.x = True
 
-	p.pcf_len = len(pcf_value)
+	if pcf_value == None and pcf_type != _pcf_type_plus_payload:
+		p.pcf_len = None
+	elif pcf_value == None:
+		p.pcf_len = None
+	else:
+		p.pcf_len = len(pcf_value)
+
 	p.pcf_type = pcf_type
 	p.pcf_integrity = pcf_integrity
 	p.pcf_value = pcf_value
 
 	if not p.is_valid():
-		return ValueError("Illegal combination of arguments!")
+		raise ValueError("Illegal combination of arguments!")
 
 	return p
 
@@ -287,7 +294,7 @@ class	Packet():
 		if self.pcf_type == 0x00:
 			return False
 
-		if self.pcf_type == 0xFF:
+		if self.pcf_type == _pcf_type_plus_payload:
 			if _any ([	self.pcf_integrity != None,
 							self.pcf_len != None,
 							self.pcf_value != None]):
