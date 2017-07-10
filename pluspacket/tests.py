@@ -533,6 +533,71 @@ class TestFuzzy(unittest.TestCase):
 	Fuzzy testing. Let's hope this detects things we didn't think of.
 	"""
 
+	def _random_packet(self):
+		"""
+		Returns a random packet.
+		"""
+
+		n = random.randint(0,1)
+
+		l = bool(random.randint(0,1))
+		r = bool(random.randint(0,1))
+		s = bool(random.randint(0,1))
+		cat = random.randint(0, 2**64 -1)
+		psn = random.randint(0, 2**32 -1)
+		pse = random.randint(0, 2**32 -1)
+		pcf_type = random.randint(0, 2**16 -1)
+		pcf_value = self._random_buf_1()
+		pcf_integrity = random.randint(0, 3)
+		payload = self._random_buf_2()
+
+		return packet.new_extended_packet(l, r, s, cat, psn, pse, pcf_type, pcf_integrity, pcf_value, payload)
+
+
+	def test_fuzzy_3(self):
+		"""
+		Make random packets. Then unparse and parse again and compare.
+		"""
+
+		i = 0
+		m = 0
+		n = 0
+		while i < 1024*100:
+			plus_packet = None
+			plus_packet_ = None
+
+			try:
+				plus_packet = self._random_packet()
+				n += 1
+				buf = plus_packet.to_bytes()
+				plus_packet_ = packet.parse_packet(buf)
+			except ValueError as e:
+				pass
+
+			if plus_packet_ == None:
+				i += 1
+				continue
+
+			self.assertEqual(plus_packet.l, plus_packet_.l)
+			self.assertEqual(plus_packet.r, plus_packet_.r)
+			self.assertEqual(plus_packet.s, plus_packet_.s)
+			self.assertEqual(plus_packet.x, plus_packet_.x)
+			self.assertEqual(plus_packet.cat, plus_packet_.cat)
+			self.assertEqual(plus_packet.psn, plus_packet_.psn)
+			self.assertEqual(plus_packet.pse, plus_packet_.pse)
+			self.assertEqual(plus_packet.payload, plus_packet_.payload)
+			self.assertEqual(plus_packet.pcf_type, plus_packet_.pcf_type)
+			self.assertEqual(plus_packet.pcf_value, plus_packet_.pcf_value)
+			self.assertEqual(plus_packet.pcf_integrity, plus_packet_.pcf_integrity)
+			self.assertEqual(plus_packet.is_valid(), True)
+			self.assertEqual(plus_packet_.is_valid(), True)
+
+			i += 1
+			m += 1
+
+		print(n, m)
+
+
 	def _random_buf_1(self):
 		"""
 		Randomly alter a valid buffer (== can be parsed) and returns it.
