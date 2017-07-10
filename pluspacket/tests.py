@@ -533,7 +533,7 @@ class TestFuzzy(unittest.TestCase):
 	Fuzzy testing. Let's hope this detects things we didn't think of.
 	"""
 
-	def _random_buf(self):
+	def _random_buf_1(self):
 		"""
 		Randomly alter a valid buffer (== can be parsed) and returns it.
 		"""
@@ -564,7 +564,21 @@ class TestFuzzy(unittest.TestCase):
 		return bytes(buf)
 
 
-	def test_fuzzy(self):
+	def _random_buf_2(self):
+		buf = [0xD8, 0x00, 0x7F, 0xFF]
+
+		n = random.randint(1, 100)
+
+		i = 0
+		while i < n:
+			k = random.randint(0, 255)
+			buf.append(k)
+			i += 1
+
+		return bytes(buf)
+
+
+	def test_fuzzy_1(self):
 		"""
 		Fuzzy testing.
 
@@ -575,7 +589,36 @@ class TestFuzzy(unittest.TestCase):
 		i = 0
 
 		while i < 1024*100:
-			buf = self._random_buf()
+			buf = self._random_buf_1()
+
+			plus_packet = None
+
+			try:
+				plus_packet = packet.parse_packet(buf)
+			except:
+				plus_packet = None
+
+			if plus_packet != None:
+				try:
+					self.assertEqual(plus_packet.to_bytes(), buf)
+				except:
+					print(plus_packet.to_dict())
+					raise ValueError("Buffer mismatch?")
+
+			i += 1
+
+	def test_fuzzy_2(self):
+		"""
+		Fuzzy testing.
+
+		If parsing of a packet is successful, then unparsing must be
+		successful as well and the buffers must match.
+		"""
+
+		i = 0
+
+		while i < 1024*100:
+			buf = self._random_buf_2()
 
 			plus_packet = None
 
