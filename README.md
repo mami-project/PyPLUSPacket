@@ -4,4 +4,4 @@ Please click those links to find out more.
 
 # Current Release
 
-Use [release/v0.1](https://github.com/FMNSSun/PyPLUSPacket/tree/release/v0.1).
+Use [release/v0.1](https://github.com/mami-project/PyPLUSPacket/tree/release/v0.1).
