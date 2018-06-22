@@ -282,7 +282,6 @@ class	Packet():
 							self.cat == None, self.magic == None,
 							self.l == None, self.r == None,
 							self.s == None, self.x == None]):
-
 			return False
 
 		if not self.x:
@@ -291,14 +290,10 @@ class	Packet():
 		if self.pcf_type == None:
 			return False
 
-		if self.pcf_type == 0x00:
-			return False
-
 		if self.pcf_type == _pcf_type_plus_payload:
 			if _any ([	self.pcf_integrity != None,
 							self.pcf_len != None,
 							self.pcf_value != None]):
-			
 				return False
 
 			return True
@@ -306,7 +301,6 @@ class	Packet():
 		if _any ([	self.pcf_integrity == None,
 						self.pcf_len == None,
 						self.pcf_value == None]):
-
 			return False
 
 
@@ -338,7 +332,7 @@ class	Packet():
 		magic = magicAndFlags >> _magic_shift
 
 		if magic != _default_magic:
-			raise ValueError("Invalid Magic value.")
+			raise ValueError("Invalid Magic value: got %s but wanted %s" % (str(hex(magic)), str(hex(_default_magic))))
 
 		self.magic = magic
 
