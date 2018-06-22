@@ -332,7 +332,7 @@ class	Packet():
 		magic = magicAndFlags >> _magic_shift
 
 		if magic != _default_magic:
-			raise ValueError("Invalid Magic value.")
+			raise ValueError("Invalid Magic value: got %s but wanted %s" % (str(hex(magic)), str(hex(_default_magic))))
 
 		self.magic = magic
 
